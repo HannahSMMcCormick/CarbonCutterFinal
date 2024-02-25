@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
+import 'profileCreator.dart';
 
 void main() {
   runApp(LeaderboardApp());
@@ -49,7 +50,7 @@ class LeaderboardApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Color(0xFFE1BEE7),
         colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Color(0xFFC8E6C9)),
-        scaffoldBackgroundColor: Color(0xFFB7E4C7),
+        scaffoldBackgroundColor: Color(0xfffefefe),
         textTheme: TextTheme(
           bodyText2: TextStyle(color: Colors.white),
         ),
@@ -121,7 +122,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
         child: Center(
           child: Text(_selectedIndex == 2
               ? 'Edit Item Screen'
-              : 'Settings Screen'),
+              : 'Profile Page'),
         ),
       ),
 
@@ -148,8 +149,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     label: 'Edit Item',
     ),
     BottomNavigationBarItem(
-    icon: Icon(Icons.settings),
-    label: 'Settings',
+    icon: Icon(Icons.person),
+    label: 'Profile',
     ),
     ],
     ),
@@ -179,11 +180,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
         ); // Placeholder widget for Edit Item screen
       case 3:
-        return Container(
-          child: Center(
-            child: Text('Settings Screen'),
-          ),
-        );
+    return ProfilePage();
       default:
         return Container();
     }
@@ -199,9 +196,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     _dailyTotals.add(dailyTotal);
     _dailyTotals.removeAt(0);
 
-    _employees.forEach((employee) {
+    for (var employee in _employees) {
       employee.items.clear();
-    });
+    }
     setState(() {});
   }
 
@@ -262,10 +259,15 @@ class LeaderboardScreen extends StatelessWidget {
 }
 
 class AddItemScreen extends StatefulWidget {
+  final Key? key; // Key parameter;
   final List<Employee> employees;
   final VoidCallback updateLeaderboard;
 
-  AddItemScreen({required this.employees, required this.updateLeaderboard});
+  const AddItemScreen({
+    this.key,
+    required this.employees,
+    required this.updateLeaderboard,
+  }) : super(key: key);
 
   @override
   _AddItemScreenState createState() => _AddItemScreenState();
@@ -275,6 +277,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
   late Employee _selectedEmployee;
   late String _itemName;
   late int _emission;
+
+  void _addItemAndNavigateBack() {
+    // Add the item to the selected employee
+    _selectedEmployee.items.add(Item(name: _itemName, emission: _emission));
+    // Update the leaderboard
+    widget.updateLeaderboard();
+    // Navigate back
+    //Navigator.pop(context);
+  }
 
   @override
   void initState() {
@@ -328,18 +339,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 labelText: 'Emission',
               ),
               keyboardType: TextInputType.number,
+              onSubmitted: (_) {
+                _addItemAndNavigateBack();
+              },
             ),
             ElevatedButton(
-              onPressed: () {
-                // Add the item to the selected employee
-                _selectedEmployee.items.add(
-                    Item(name: _itemName, emission: _emission));
-                // Update the leaderboard
-                widget.updateLeaderboard();
-                // Navigate back
-                Navigator.pop(context);
-              },
-              child: Text('Add'),
+              onPressed: _addItemAndNavigateBack,
+              child: const Text('Add'),
             ),
           ],
         ),
@@ -348,3 +354,103 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 }
 
+
+
+
+
+
+
+class ProfilePage extends StatefulWidget {
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  late Profile _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfileData();
+  }
+
+  Future<void> _fetchProfileData() async {
+    try {
+      final Profiles profiles = Profiles();
+      _user = await profiles.getEmployee(0);
+      setState(() {});
+    } catch (error) {
+      print('Error fetching profile data: $error');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Profile'),
+        ),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'User Information',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 16),
+            Text('First Name: ${_user.properties['firstName']}'),
+            Text('Last Name: ${_user.properties['lastName']}'),
+            Text('Email: ${_user.properties['email']}'),
+            SizedBox(height: 32),
+            Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.edit),
+              title: Text('Edit Profile'),
+              onTap: () {
+                // Navigate to edit profile page
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.lock),
+              title: Text('Change Password'),
+              onTap: () {
+                // Navigate to change password page
+              },
+            ),
+            // Add more settings options as needed
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+  // Widget to display loading indicator while fetching data
+  Widget buildLoadingIndicator() {
+    return Center(child: CircularProgressIndicator());
+    }
+}
