@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-Future<Map<String, dynamic>> fetchProductData(keywords) async {
+Future<Map<String, dynamic>> fetchProductData(String keywords) async {
   final String url = 'https://amazon-pricing-and-product-info.p.rapidapi.com/';
   final Map<String, String> queryParams = {
     'keywords': keywords,
@@ -21,17 +21,16 @@ Future<Map<String, dynamic>> fetchProductData(keywords) async {
       return responseData;
     } else {
       print('Failed to load data: ${response.statusCode}');
-      return {}
+      return {}; // Return empty map on failure
     }
   } catch (error) {
     print('Error: $error');
-    return {}
+    return {}; // Return empty map on error
   }
 }
 
-void main(){
+void main() async {
     final keywords = 'purse';
     final productData = await fetchProductData(keywords);
     print(productData);
 }
-
